@@ -63,7 +63,7 @@ def update_news(s):
         page = BeautifulSoup(r.text, 'html.parser')
         news = get_news(page)
         for elem in news:
-            if len(s.query(News).filter(News.url == elem['url']).all()) == 1:
+            if len(s.query(News).filter(News.url.in_(elem['url'])).all()) == 1:
                 run = False
                 break
             new = News(**elem)
@@ -75,4 +75,7 @@ engine = create_engine("sqlite:///news.db")
 Base.metadata.create_all(bind=engine)
 session = sessionmaker(bind=engine)
 s = session()
+from sqlalchemy.inspection import inspect
+print(inspect(News).primary_key[0])
+
 url = 'https://habrahabr.ru/flows/develop/all/'

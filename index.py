@@ -28,7 +28,8 @@ def news_list():
 def add_label():
     label = request.query.label
     ID = request.query.id
-    print(label, ID)
+    s.query(News).filter(News.id.contains(ID)).first().label = label
+    s.commit()
     redirect('/news')
 
 engine = create_engine("sqlite:///news.db")
