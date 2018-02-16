@@ -7,8 +7,11 @@ from bs4 import BeautifulSoup
 import requests
 from bottle import route, run, template, request, post, get, redirect
 
-Base = declarative_base()
 
+URL = 'https://habrahabr.ru/flows/develop/all/'
+
+
+Base = declarative_base()
 class News(Base):
     __tablename__ = "news"
     id = Column(Integer, primary_key = True)
@@ -41,11 +44,16 @@ def get_news(page):
         data.append(d)
     return data
 
-def get_all_news(s):
+def get_all_news():
+    engine = create_engine("sqlite:///news.db")
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)
+    s = session()    
+
     i = 0
     while i != 100:
-        print(url + 'page' + str(i + 1) + '/')
-        r = requests.get(url + 'page' + str(i + 1) + '/')
+        print(URL + 'page' + str(i + 1) + '/')
+        r = requests.get(URL + 'page' + str(i + 1) + '/')
         page = BeautifulSoup(r.text, 'html.parser')
         news = get_news(page)
         for elem in news:
@@ -54,28 +62,24 @@ def get_all_news(s):
         i += 1
     s.commit()
 
-def update_news(s):
+def update_news():
+    engine = create_engine("sqlite:///news.db")
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)
+    s = session()
+
     i = 0
     run = True
     while i != 100 and run:
-        print(url + 'page' + str(i + 1) + '/')
-        r = requests.get(url + 'page' + str(i + 1) + '/')
+        print(URL + 'page' + str(i + 1) + '/')
+        r = requests.get(URL + 'page' + str(i + 1) + '/')
         page = BeautifulSoup(r.text, 'html.parser')
         news = get_news(page)
         for elem in news:
-            if len(s.query(News).filter(News.url.in_(elem['url'])).all()) == 1:
+            if len(s.query(News).filter(News.url.contains(elem['url'])).all()) == 1:
                 run = False
                 break
             new = News(**elem)
             s.add(new)
         i += 1
     s.commit()
-
-engine = create_engine("sqlite:///news.db")
-Base.metadata.create_all(bind=engine)
-session = sessionmaker(bind=engine)
-s = session()
-from sqlalchemy.inspection import inspect
-print(inspect(News).primary_key[0])
-
-url = 'https://habrahabr.ru/flows/develop/all/'
