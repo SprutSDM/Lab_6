@@ -1,9 +1,10 @@
 #encoding: utf8
 import string
+import math
 
 class NaiveBayesClassifier:
     
-    def __init__(self, alpha):
+    def __init__(self, alpha = 1):
         self.alpha = alpha
         return
     
@@ -14,7 +15,11 @@ class NaiveBayesClassifier:
         words = dict() # список слов
         #all_words = dict() # количество встретившихся одинаковых слов
         all_targets = dict() # количество слов в этом состоянии
-        cnt = 0 # коли
+        
+        self.targets = targets
+        self.words = words
+        self.all_targets = all_targets
+        
         for _target in targets:
             all_targets[_target] = 0
 
@@ -28,6 +33,7 @@ class NaiveBayesClassifier:
                 words[word][target] += 1
                 #all_words[word] += 1
                 all_targets[target] += 1
+
         chances = dict() # вероятность встретить слово в этом состоянии
         for word in words:
             chances[word] = dict()
@@ -37,25 +43,53 @@ class NaiveBayesClassifier:
 
     def predict(self, X):
         """ Perform classification on an array of test vectors X. """
-        pass
+        pre = list()
+        for msg in X:
+            final_state = None
+            final_state_target = ''            
+            for target in self.targets:
+                state = math.log(self.all_targets[target])
+                for word in msg.split():
+                    if word in self.words:
+                        state += math.log(self.chances[word][target])
+                if final_state == None:
+                    final_state = state
+                    final_state_target = target
+                elif state > final_state:
+                    final_state = state
+                    final_state_target = target
+            pre.append(final_state_target)
+        return pre
     
     def score(self, X_test, y_test):
         """ Returns the mean accuracy on the given test data and labels. """
-        pass
+        line = self.predict(X_test)
+        cnt = 0
+        for i in range(len(y_test)):
+            cnt += int(y_test[i] == line[i])
+            print(y_test[i], line[i])
+        return cnt / len(y_test)
 
-train = [
-    ('I love this sandwich.', 'pos'),
-    ('This is an amazing place!', 'pos'),
-    ('I feel very good about these beers.', 'pos'),
-    ('This is my best work.', 'pos'),
-    ("What an awesome view", 'pos'),
-    ('I do not like this restaurant', 'neg'),
-    ('I am tired of this stuff.', 'neg'),
-    ("I can't deal with this", 'neg'),
-    ('He is my sworn enemy!', 'neg'),
-    ('My boss is horrible.', 'neg') ]
-import scripts
-nbc = NaiveBayesClassifier(1)
-X = [scripts.clean(x[0]) for x in train]
-Y = [elem[1] for elem in train]
-nbc.fit(X, Y)
+def test():
+    train = [
+        ('I love this sandwich.', 'pos'),
+        ('This is an amazing place!', 'pos'),
+        ('I feel very good about these beers.', 'pos'),
+        ('This is my best work.', 'pos'),
+        ("What an awesome view", 'pos'),
+        ('I do not like this restaurant', 'neg'),
+        ('I am tired of this stuff.', 'neg'),
+        ("I can't deal with this", 'neg'),
+        ('He is my sworn enemy!', 'neg'),
+        ('My boss is horrible.', 'neg') ]
+    import scripts
+    import csv
+    with open('SMSSpamCollection.csv') as f:
+        data = list(csv.reader(f, delimiter='\t'))
+    nbc = NaiveBayesClassifier(0.05)
+    X = [scripts.clean(elem[1]) for elem in data]
+    y = [elem[0] for elem in data]
+    print(X[:3])
+    X_train, y_train, X_test, y_test = X[:3900], y[:3900], X[3900:], y[3900:]
+    nbc.fit(X_train, y_train)
+    print(nbc.score(X_test, y_test))
