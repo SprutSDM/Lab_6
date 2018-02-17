@@ -1,11 +1,12 @@
 # encoding: utf8
-from sqlalchemy.ext.declarative import declarative_base
+from bottle import route, run, template, request, post, get, redirect
+from bs4 import BeautifulSoup
 from sqlalchemy import Column, String, Integer
 from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from bs4 import BeautifulSoup
 import requests
-from bottle import route, run, template, request, post, get, redirect
+import string
 
 
 URL = 'https://habrahabr.ru/flows/develop/all/'
@@ -83,3 +84,8 @@ def update_news():
             s.add(new)
         i += 1
     s.commit()
+    
+
+def clean(s):
+    translator = str.maketrans("", "", string.punctuation)
+    return s.translate(translator).lower()
