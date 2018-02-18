@@ -46,7 +46,7 @@ class NaiveBayesClassifier:
         pre = list()
         for msg in X:
             final_state = None
-            final_state_target = ''            
+            final_state_target = ''
             for target in self.targets:
                 state = math.log(self.all_targets[target])
                 for word in msg.split():
@@ -71,17 +71,6 @@ class NaiveBayesClassifier:
         return cnt / len(y_test)
 
 def test():
-    train = [
-        ('I love this sandwich.', 'pos'),
-        ('This is an amazing place!', 'pos'),
-        ('I feel very good about these beers.', 'pos'),
-        ('This is my best work.', 'pos'),
-        ("What an awesome view", 'pos'),
-        ('I do not like this restaurant', 'neg'),
-        ('I am tired of this stuff.', 'neg'),
-        ("I can't deal with this", 'neg'),
-        ('He is my sworn enemy!', 'neg'),
-        ('My boss is horrible.', 'neg') ]
     import scripts
     import csv
     with open('SMSSpamCollection.csv') as f:
