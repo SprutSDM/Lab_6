@@ -38,6 +38,10 @@ class NaiveBayesClassifier:
             for target in targets:
                 chances[word][target] = (words[word][target] + self.alpha) / (all_targets[target] + self.alpha * len(words))
         self.chances = chances
+        
+        '''line = [(words[word]['never'], word) for word in words]
+        line.sort(reverse=True)
+        print(*line, sep='\n')'''
 
     def predict(self, X):
         """ Perform classification on an array of test vectors X. """
@@ -47,7 +51,7 @@ class NaiveBayesClassifier:
             final_state_target = ''
             for target in self.targets:
                 state = math.log(self.all_targets[target])
-                for word in msg.split():
+                for word in scripts.morph_analyzer(msg):
                     if word in self.words:
                         state += math.log(self.chances[word][target])
                 if final_state == None:

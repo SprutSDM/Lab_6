@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from bottle import route, run, template, request, post, get, redirect
 
 import scripts
+import classificator
 
 #CONSTANTS
 PER_PAGE = 10
@@ -28,14 +29,15 @@ class News(Base):
 @route('/news')
 @route('/news/')
 @route('/news/page<page:int>')
-def news_list(page = 0):
+def news_list(page=0):
     print(page)
     per = int(request.query.per or PER_PAGE)
     start = max(0, (page - 1) * per)
-    if per <= 0 or start >= s.query(News).count(): # if bad request
+    news = s.query(News).filter(News.label == None).all()
+    if per <= 0 or start >= len(news): # if bad request
         redirect('/news/page1')
         return
-    rows = s.query(News).filter(News.label == None).all()[start:start+per]
+    rows = news[start:start+per]
     return template('news_template', rows=rows)
 
 @route('/update_news')
@@ -52,6 +54,30 @@ def add_label():
     s.commit()
     redirect('/news')
 
+@route('/recomendations')
+def recomendations():
+    fitted_news = s.query(News).filter(News.label != None).all()
+    news = s.query(News).filter(News.label == None).all()
+    nbc = classificator.NaiveBayesClassifier(0.05)
+    X = list()
+    y = list()
+    for new in fitted_news:
+        X.append(scripts.clean(new.title))
+        y.append(new.label)
+    nbc.fit(X, y)
+    predict_news = nbc.predict([scripts.clean(new.title) for new in news])
+    sort_news = list()
+    for i in range(len(news)):
+        if predict_news[i] == 'good':
+            mark = 0
+        elif predict_news[i] == 'maybe':
+            mark = 1
+        elif predict_news[i] == 'never':
+            mark = 2
+        sort_news.append([mark, -news[i].points, -news[i].comments,
+                          news[i].author, news[i].title, news[i].url])
+    sort_news.sort()
+    return template('recomendation_news_template', rows=sort_news)
 
 engine = create_engine("sqlite:///news.db")
 Base.metadata.create_all(bind=engine)
