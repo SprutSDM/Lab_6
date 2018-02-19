@@ -5,14 +5,15 @@ from sqlalchemy import Column, String, Integer
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import pymorphy2
 import requests
 import string
 
 
 URL = 'https://habrahabr.ru/flows/develop/all/'
-
-
+morph = pymorphy2.MorphAnalyzer()
 Base = declarative_base()
+
 class News(Base):
     __tablename__ = "news"
     id = Column(Integer, primary_key = True)
@@ -84,8 +85,11 @@ def update_news():
             s.add(new)
         i += 1
     s.commit()
-    
+
 
 def clean(s):
     translator = str.maketrans("", "", string.punctuation)
     return s.translate(translator).lower()
+
+def morph_analyzer(s):
+    return [morph.parse(word)[0].normal_form for word in s.split()]
